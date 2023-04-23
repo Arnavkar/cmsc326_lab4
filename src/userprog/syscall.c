@@ -78,49 +78,57 @@ syscall_handler (struct intr_frame *f ) // UNUSED)
 
   int call_num = *(int *)(f->esp);
   //printf ("system call nr: %d\n",call_num);
-  
- switch (call_num) {
 
- case SYS_HALT:
+  //Enum for syscalls is declared in lib/syscall-nr.h
+  //SYS-WAIT not added
+  switch (call_num) {
+
+  case SYS_HALT:
     s_halt();
     break;
 
- case SYS_EXIT:
+  case SYS_WAIT:
+    get_args(f->esp,(void **)&s_args,1);
+    tid_t child_tid = (tid_t) (s_args[0]);
+    s_wait(child_tid);
+    break;
+
+  case SYS_EXIT:
     get_args(f->esp,(void **)&s_args,1);
     int status = (int) (s_args[0]);
     s_exit (status);
     break;
 
- case SYS_EXEC:
+  case SYS_EXEC:
     get_args(f->esp,(void **)&s_args,1);
     check_invalid_ptr_error((const void *)s_args[0]);
     char *fname = (char *)(user_to_kernel_ptr((const void *) s_args[0]));
     f->eax = (tid_t) s_exec(fname);
     break;
 
- case SYS_FILESIZE:
-   get_args(f->esp,(void **)&s_args,1);
-   int fid_fsize = (int) (s_args[0]);
-   f->eax = s_filesize(fid_fsize);
-   break;
+  case SYS_FILESIZE:
+    get_args(f->esp,(void **)&s_args,1);
+    int fid_fsize = (int) (s_args[0]);
+    f->eax = s_filesize(fid_fsize);
+    break;
 
- case SYS_REMOVE:
+  case SYS_REMOVE:
     get_args(f->esp,(void **) &s_args,1);
     s_args[0] = (void *) user_to_kernel_ptr((const void *) s_args[0]);
     fname = (char *)(s_args[0]);
     f->eax = s_remove(fname);
     break;
 
- case SYS_OPEN:
-   get_args(f->esp,(void **)&s_args,1);
-   if ((char *) s_args[0] == NULL) s_exit(ERROR);
-   check_buffer_ptr(s_args[0],1);
-   s_args[0] = (void *) user_to_kernel_ptr((const void *) s_args[0]);
-   fname = (char *)(s_args[0]);
-   f->eax = s_open(fname);
-   break;
+  case SYS_OPEN:
+    get_args(f->esp,(void **)&s_args,1);
+    if ((char *) s_args[0] == NULL) s_exit(ERROR);
+    check_buffer_ptr(s_args[0],1);
+    s_args[0] = (void *) user_to_kernel_ptr((const void *) s_args[0]);
+    fname = (char *)(s_args[0]);
+    f->eax = s_open(fname);
+    break;
 
- case SYS_CREATE:
+  case SYS_CREATE:
     get_args(f->esp,(void **)&s_args,2);
     unsigned int size = (unsigned int)(s_args[1]);
     check_buffer_ptr(s_args[0],size);
@@ -143,11 +151,11 @@ syscall_handler (struct intr_frame *f ) // UNUSED)
       f->eax = s_read(fd_rw,buf,bufsize);      
     break;
 
-   case SYS_CLOSE:
-     get_args(f->esp,(void **)&s_args,1);
-     int fid = (int)(s_args[0]);
-     s_close(fid);
-     break;
+  case SYS_CLOSE:
+    get_args(f->esp,(void **)&s_args,1);
+    int fid = (int)(s_args[0]);
+    s_close(fid);
+    break;
     
  default:
     printf("Sys call is unknown!!\n");
@@ -176,6 +184,11 @@ void get_args(void *sp, void **args,int n) {
 
 void s_halt () {
   shutdown_power_off();
+}
+
+void s_wait(tid_t child_tid){
+  int status =  process_wait(child_tid);
+  if(status == -1) printf("Something went wrong");
 }
 
 /*
