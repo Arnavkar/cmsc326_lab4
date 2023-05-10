@@ -31,10 +31,10 @@ pass tests/userprog/rox-simple
 FAIL tests/userprog/rox-child
 FAIL tests/userprog/rox-multichild
 pass tests/userprog/bad-read
-FAIL tests/userprog/bad-write
+pass tests/userprog/bad-write
 FAIL tests/userprog/bad-read2
 FAIL tests/userprog/bad-write2
-FAIL tests/userprog/bad-jump
+pass tests/userprog/bad-jump
 FAIL tests/userprog/bad-jump2
 FAIL tests/userprog/no-vm/multi-oom
 pass tests/userprog/args-none
