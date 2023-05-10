@@ -140,6 +140,9 @@ page_fault (struct intr_frame *f)
      be assured of reading CR2 before it changed). */
   intr_enable ();
 
+  /*When a page fault is generated, it may be the case that check_invalid_ptr_error has not yet run, since no other syscall might have been made apart from the write to disk*/
+  check_invalid_ptr_error (fault_addr);
+  
   /* Count page faults. */
   page_fault_cnt++;
 

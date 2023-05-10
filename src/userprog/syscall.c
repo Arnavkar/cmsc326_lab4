@@ -384,7 +384,7 @@ void check_buffer_ptr(const void *buf,unsigned size) {
 */
 void check_invalid_ptr_error (const void *vaddr)
 {
-  if (!is_user_vaddr(vaddr) || vaddr < USER_VADDR_BASE)
+  if (!is_user_vaddr(vaddr) || vaddr < USER_VADDR_BASE || vaddr == NULL)
     {
       s_exit(ERROR);
     }

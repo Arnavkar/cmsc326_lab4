@@ -47,18 +47,21 @@ process_execute (const char *file_name)
   char *save_ptr;
   file_name = strtok_r((char *) file_name, " ", &save_ptr);
   /*+ Open executable file to test for existence. */
-  if (!lock_held_by_current_thread(&file_lock)) lock_acquire(&file_lock);
+  if (!lock_held_by_current_thread(&file_lock))
+    lock_acquire(&file_lock);
   file = filesys_open (file_name);
-  if (lock_held_by_current_thread(&file_lock)) lock_release(&file_lock);
+  
 
-  if (file == NULL) 
-    {
+  if (file == NULL) {
       free(file);
       printf ("load: %s: open failed\n", file_name);
       return TID_ERROR;
     }
-  free(file); // inefficient.  will later reopen file!!
-
+  //If the executable has been successfully opened, deny write access//
+  file_deny_write(file);
+  
+  if (lock_held_by_current_thread(&file_lock)) lock_release(&file_lock);
+  free(file);
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
   if (tid == TID_ERROR) {
@@ -112,16 +115,18 @@ int
 process_wait (tid_t child_tid UNUSED) 
 {
   struct child_process* cp = get_child_process(child_tid);
-  if (!cp || cp->wait)
-    {
-      printf("child proc not found\n");
-      return ERROR;
-    }
-    cp->wait = true;
+  if (!cp){
+    printf("child proc not found\n");
+    return ERROR;
+  } else if(cp->wait){
+    printf("wait already called\n");
+    return ERROR;
+  }
+  cp->wait = true;
+  //lock_acquire(&cp->wait_lock);
+  
   while (!cp->exit) // busy loop (needs to be removed)
-    {
-      timer_sleep(1000);
-    }
+    timer_sleep(1000);
   int status = cp->status;
   remove_child_process(cp);
   return status;
