@@ -116,11 +116,11 @@ process_wait (tid_t child_tid UNUSED)
 {
   struct child_process* cp = get_child_process(child_tid);
   if (!cp){
-    printf("child proc not found\n");
+    //printf("child proc not found\n");
     return ERROR;
   }
   if(cp->wait){
-    printf("wait already called\n");
+    //printf("wait already called\n");
     return ERROR;
   }
   cp->wait = true;

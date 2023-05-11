@@ -188,7 +188,7 @@ void s_halt () {
 
 int s_wait(tid_t child_tid){
   int status =  process_wait(child_tid);
-  if(status == -1) printf("Something went wrong");
+  //if(status == -1) printf("Something went wrong");
   return status;
 }
 
