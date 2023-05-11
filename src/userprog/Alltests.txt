@@ -25,7 +25,7 @@ pass tests/userprog/wait-simple
 pass tests/userprog/wait-twice
 pass tests/userprog/wait-killed
 pass tests/userprog/wait-bad-pid
-FAIL tests/userprog/multi-recurse
+pass tests/userprog/multi-recurse
 FAIL tests/userprog/multi-child-fd
 pass tests/userprog/rox-simple
 FAIL tests/userprog/rox-child

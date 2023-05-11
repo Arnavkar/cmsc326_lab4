@@ -80,7 +80,6 @@ syscall_handler (struct intr_frame *f ) // UNUSED)
   //printf ("system call nr: %d\n",call_num);
 
   //Enum for syscalls is declared in lib/syscall-nr.h
-  //SYS-WAIT not added
   switch (call_num) {
 
   case SYS_HALT:
@@ -150,6 +149,13 @@ syscall_handler (struct intr_frame *f ) // UNUSED)
     else
       f->eax = s_read(fd_rw,buf,bufsize);      
     break;
+    
+  case SYS_SEEK:
+    get_args(f->esp,(void **)&s_args,2);
+    int fd = (int)s_args[0];
+    unsigned int position = (unsigned int)s_args[1];
+    s_seek(fd,position);
+      
 
   case SYS_CLOSE:
     get_args(f->esp,(void **)&s_args,1);
@@ -186,9 +192,25 @@ void s_halt () {
   shutdown_power_off();
 }
 
+void s_seek(int fd,unsigned int position){
+  lock_acquire(&file_lock);
+  if (fd == 0) { // from stdin
+    printf("No file requested - fd 0 reserved for stdin");
+  } else {
+  //Get file if not stdin
+    struct file *fp = get_file(fd);
+    if (fp == NULL){
+      printf("File not found"); 
+    } else {
+      file_seek(fp,position);//If file is found, then call file seek
+    }
+  }
+  lock_release(&file_lock);
+  return;
+}
+
 int s_wait(tid_t child_tid){
   int status =  process_wait(child_tid);
-  //if(status == -1) printf("Something went wrong");
   return status;
 }
 
@@ -228,8 +250,6 @@ s_exec(char *cmdline) {
   ASSERT(cp);
   return pid;
 }
-
-
 
 /*  
    Terminates the current user program, returning status to the
@@ -288,7 +308,7 @@ int add_file(struct file *fp) {
   flist->file = fp;
   flist->fd = thread_current()->fd;
   thread_current()->fd++;
-  list_push_back(&thread_current()->file_list, &flist->elem);
+  list_push_front(&thread_current()->file_list, &flist->elem);
   return flist->fd;
 }
 
@@ -326,8 +346,10 @@ int s_write(int fd,char *buf,unsigned bufsize) {
     }
 
   } else {
+    //check_buffer_ptr(buf,bufsize);
     struct file *fp = get_file(fd);
-    if (fp == NULL) return nwritten;
+    if (fp == NULL)
+      return nwritten;
     lock_acquire(&file_lock);
     nwritten = file_write(fp,buf,bufsize);
     lock_release(&file_lock);
@@ -533,6 +555,13 @@ void remove_child_process (struct child_process *cp)
 
 
 void remove_child_processes(void) {
-  // not implemented
+  struct thread *t = thread_current();
+  struct list_elem *e;
+  for (e = list_begin (&t->child_list); e != list_end (&t->child_list);
+       e = list_next (e))
+        {
+          struct child_process *cp = list_entry (e, struct child_process, elem);
+          remove_child_process (cp);
+        }
 }
 

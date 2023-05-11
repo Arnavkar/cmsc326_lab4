@@ -47,8 +47,7 @@ process_execute (const char *file_name)
   char *save_ptr;
   file_name = strtok_r((char *) file_name, " ", &save_ptr);
   /*+ Open executable file to test for existence. */
-  if (!lock_held_by_current_thread(&file_lock))
-    lock_acquire(&file_lock);
+  if (!lock_held_by_current_thread(&file_lock)) lock_acquire(&file_lock);
   file = filesys_open (file_name);
   
 
@@ -57,11 +56,10 @@ process_execute (const char *file_name)
       printf ("load: %s: open failed\n", file_name);
       return TID_ERROR;
     }
-  //If the executable has been successfully opened, deny write access//
-  file_deny_write(file);
-  
+
   if (lock_held_by_current_thread(&file_lock)) lock_release(&file_lock);
-  free(file);
+  file_close(file);
+  
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
   if (tid == TID_ERROR) {
@@ -145,15 +143,22 @@ process_exit (void)
   if (thread_alive(cur->parent)){
       cur->cp->exit = true;
   }
-  
-  /* call sema up  to nofity its parent process, allowing process wait to complete. */
+  cur->cp->exit = true;
+
+  /*Close the thread executable file when exiting*/
+  if (cur->exec_file != NULL){
+    file_close(cur->exec_file);
+  }
+
+  /*Close all other files*/
+  process_close_file(cur->fd);
+
+  /* call sema up to nofity  parent process, allowing process wait to run to completion. */
   if (cur->cp->wait) {
     sema_up (&cur->cp->wait_sema);
+    cur->cp->wait = false;
   }
   
-  cur->cp->wait = false;
-
-
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
   pd = cur->pagedir;
@@ -170,7 +175,6 @@ process_exit (void)
       pagedir_activate (NULL);
       pagedir_destroy (pd);
     }
-  cur->cp->exit = true;
 }
 
 /* Sets up the CPU for running user code in the current
@@ -397,7 +401,15 @@ load (const char *file_name, void (**eip) (void), void **esp)
 
  done:
   /* We arrive here whether the load is successful or not. */
-  file_close (file);
+
+  //If successfull, deny write to the executable file and keep it open
+  //Also, store a reference to the executable file to the current thread, and add to the file list of the current thread
+  if (success){
+    file_deny_write(file);
+    t->exec_file = file;
+  }else{
+    file_close (file);
+  }
   
   /*+ */
   if (lock_held_by_current_thread(&file_lock)) lock_release(&file_lock);
