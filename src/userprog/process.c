@@ -118,15 +118,14 @@ process_wait (tid_t child_tid UNUSED)
   if (!cp){
     printf("child proc not found\n");
     return ERROR;
-  } else if(cp->wait){
+  }
+  if(cp->wait){
     printf("wait already called\n");
     return ERROR;
   }
   cp->wait = true;
-  //lock_acquire(&cp->wait_lock);
+  sema_down(&cp->wait_sema);
   
-  while (!cp->exit) // busy loop (needs to be removed)
-    timer_sleep(1000);
   int status = cp->status;
   remove_child_process(cp);
   return status;
@@ -143,13 +142,16 @@ process_exit (void)
   remove_child_processes();
 
   // Will exit if killed by the kernel
-  if (thread_alive(cur->parent))
-    {
+  if (thread_alive(cur->parent)){
       cur->cp->exit = true;
-    }
-  // set proc exit to true
-  //  struct child_process *cp = get_child_process(cur->parent->pid);
-  cur->cp->exit = true;
+  }
+  
+  /* call sema up  to nofity its parent process, allowing process wait to complete. */
+  if (cur->cp->wait) {
+    sema_up (&cur->cp->wait_sema);
+  }
+  
+  cur->cp->wait = false;
 
 
   /* Destroy the current process's page directory and switch back
@@ -168,6 +170,7 @@ process_exit (void)
       pagedir_activate (NULL);
       pagedir_destroy (pd);
     }
+  cur->cp->exit = true;
 }
 
 /* Sets up the CPU for running user code in the current

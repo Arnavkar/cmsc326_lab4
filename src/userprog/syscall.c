@@ -90,7 +90,7 @@ syscall_handler (struct intr_frame *f ) // UNUSED)
   case SYS_WAIT:
     get_args(f->esp,(void **)&s_args,1);
     tid_t child_tid = (tid_t) (s_args[0]);
-    s_wait(child_tid);
+    f->eax = s_wait(child_tid);
     break;
 
   case SYS_EXIT:
@@ -186,9 +186,10 @@ void s_halt () {
   shutdown_power_off();
 }
 
-void s_wait(tid_t child_tid){
+int s_wait(tid_t child_tid){
   int status =  process_wait(child_tid);
   if(status == -1) printf("Something went wrong");
+  return status;
 }
 
 /*
@@ -239,11 +240,10 @@ s_exec(char *cmdline) {
 void s_exit (int status) {
   struct thread *curthread = thread_current();
 
-  /*if (thread_alive(curthread->parent))
-    {
+  if (thread_alive(curthread->parent)){
       curthread->cp->status = status; // set up child status for later
-      }
-  */
+  }
+  
   printf ("%s: exit(%d)\n",curthread->name,status);
   if (lock_held_by_current_thread(&file_lock)) lock_release(&file_lock);
   
@@ -381,6 +381,7 @@ void check_buffer_ptr(const void *buf,unsigned size) {
 
 /*
   Check validity of virtual address for user space.
+  Added Null Check
 */
 void check_invalid_ptr_error (const void *vaddr)
 {
@@ -490,7 +491,7 @@ verify_user (const uint8_t *uaddr)
   return true;
 }
 
-
+//Adds a new child process to the child list of a parent thread
 struct child_process* add_child_process (int pid)
 {
   struct child_process* cp = malloc(sizeof(struct child_process));
@@ -498,7 +499,7 @@ struct child_process* add_child_process (int pid)
   cp->load = NOT_LOADED;
   cp->wait = false;
   cp->exit = false;
-  //lock_init(&cp->wait_lock);
+  sema_init(&cp->wait_sema,0);
   list_push_back(&thread_current()->child_list,&cp->elem);
   return cp;
 }

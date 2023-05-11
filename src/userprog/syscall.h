@@ -25,7 +25,7 @@ struct child_process {
   bool wait;
   bool exit;
   int status;
-  struct lock wait_lock;
+  struct semaphore wait_sema; //will be used to make the parent thread wait for the child
   struct list_elem elem;
 };
 
