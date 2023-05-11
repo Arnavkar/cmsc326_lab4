@@ -107,6 +107,7 @@ struct thread
     /*+ for files */
     int fd;
     struct list file_list;
+    struct file *exec_file;
     
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
