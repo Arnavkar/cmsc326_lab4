@@ -225,7 +225,7 @@ int s_filesize(int fid) {
     lock_acquire(&file_lock);    
     size = file_length(fp);
     lock_release(&file_lock);    
-    free(fp);
+    //free(fp); //SHOULD NOT FREE!
   }
   return size;
 }
