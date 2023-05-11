@@ -28,8 +28,8 @@ pass tests/userprog/wait-bad-pid
 pass tests/userprog/multi-recurse
 FAIL tests/userprog/multi-child-fd
 pass tests/userprog/rox-simple
-FAIL tests/userprog/rox-child
-FAIL tests/userprog/rox-multichild
+pass tests/userprog/rox-child
+pass tests/userprog/rox-multichild
 pass tests/userprog/bad-read
 pass tests/userprog/bad-write
 pass tests/userprog/bad-read2
@@ -40,7 +40,7 @@ FAIL tests/userprog/no-vm/multi-oom
 pass tests/userprog/args-none
 pass tests/userprog/args-single
 pass tests/userprog/args-many
-FAIL tests/userprog/close-normal
+pass tests/userprog/close-normal
 pass tests/userprog/close-twice
 pass tests/userprog/close-stdin
 pass tests/userprog/close-stdout

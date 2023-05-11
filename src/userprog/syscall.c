@@ -152,9 +152,10 @@ syscall_handler (struct intr_frame *f ) // UNUSED)
     
   case SYS_SEEK:
     get_args(f->esp,(void **)&s_args,2);
-    int fd = (int)s_args[0];
+    int fd = (int)(s_args[0]);
     unsigned int position = (unsigned int)s_args[1];
     s_seek(fd,position);
+    break;
       
 
   case SYS_CLOSE:
