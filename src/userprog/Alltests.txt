@@ -26,7 +26,7 @@ pass tests/userprog/wait-twice
 pass tests/userprog/wait-killed
 pass tests/userprog/wait-bad-pid
 pass tests/userprog/multi-recurse
-FAIL tests/userprog/multi-child-fd
+pass tests/userprog/multi-child-fd
 pass tests/userprog/rox-simple
 pass tests/userprog/rox-child
 pass tests/userprog/rox-multichild
@@ -45,7 +45,7 @@ pass tests/userprog/close-twice
 pass tests/userprog/close-stdin
 pass tests/userprog/close-stdout
 pass tests/userprog/close-bad-fd
-FAIL tests/userprog/read-normal
+pass tests/userprog/read-normal
 pass tests/userprog/read-bad-ptr
 pass tests/userprog/read-boundary
 pass tests/userprog/read-zero
@@ -60,8 +60,8 @@ pass tests/userprog/write-bad-fd
 pass tests/userprog/exec-once
 pass tests/userprog/exec-arg
 pass tests/userprog/exec-bound
-FAIL tests/userprog/exec-bound-2
-FAIL tests/userprog/exec-bound-3
+pass tests/userprog/exec-bound-2
+pass tests/userprog/exec-bound-3
 pass tests/userprog/exec-multiple
 pass tests/userprog/exec-missing
 pass tests/userprog/exec-bad-ptr

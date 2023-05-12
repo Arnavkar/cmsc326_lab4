@@ -82,52 +82,33 @@ syscall_handler (struct intr_frame *f ) // UNUSED)
   //Enum for syscalls is declared in lib/syscall-nr.h
   switch (call_num) {
 
-  case SYS_HALT:
+  case SYS_HALT: //1
     s_halt();
     break;
 
-  case SYS_WAIT:
-    get_args(f->esp,(void **)&s_args,1);
-    tid_t child_tid = (tid_t) (s_args[0]);
-    f->eax = s_wait(child_tid);
-    break;
-
-  case SYS_EXIT:
+  case SYS_EXIT: //2
     get_args(f->esp,(void **)&s_args,1);
     int status = (int) (s_args[0]);
     s_exit (status);
     break;
 
-  case SYS_EXEC:
+  case SYS_EXEC: //3
+    //Check buffer of 8 bytes before calling exec
+    //8 bytes because we first offset 
+    //check_buffer_ptr(f->esp,8);
     get_args(f->esp,(void **)&s_args,1);
     check_invalid_ptr_error((const void *)s_args[0]);
     char *fname = (char *)(user_to_kernel_ptr((const void *) s_args[0]));
     f->eax = (tid_t) s_exec(fname);
     break;
-
-  case SYS_FILESIZE:
+    
+  case SYS_WAIT: //4
     get_args(f->esp,(void **)&s_args,1);
-    int fid_fsize = (int) (s_args[0]);
-    f->eax = s_filesize(fid_fsize);
+    tid_t child_tid = (tid_t) (s_args[0]);
+    f->eax = s_wait(child_tid);
     break;
 
-  case SYS_REMOVE:
-    get_args(f->esp,(void **) &s_args,1);
-    s_args[0] = (void *) user_to_kernel_ptr((const void *) s_args[0]);
-    fname = (char *)(s_args[0]);
-    f->eax = s_remove(fname);
-    break;
-
-  case SYS_OPEN:
-    get_args(f->esp,(void **)&s_args,1);
-    if ((char *) s_args[0] == NULL) s_exit(ERROR);
-    check_buffer_ptr(s_args[0],1);
-    s_args[0] = (void *) user_to_kernel_ptr((const void *) s_args[0]);
-    fname = (char *)(s_args[0]);
-    f->eax = s_open(fname);
-    break;
-
-  case SYS_CREATE:
+  case SYS_CREATE: //5
     get_args(f->esp,(void **)&s_args,2);
     unsigned int size = (unsigned int)(s_args[1]);
     check_buffer_ptr(s_args[0],size);
@@ -136,8 +117,30 @@ syscall_handler (struct intr_frame *f ) // UNUSED)
     f->eax = s_create(fname,size);
     break;
 
-  case SYS_READ:
-  case SYS_WRITE:
+  case SYS_REMOVE: //6 
+    get_args(f->esp,(void **) &s_args,1);
+    s_args[0] = (void *) user_to_kernel_ptr((const void *) s_args[0]);
+    fname = (char *)(s_args[0]);
+    f->eax = s_remove(fname);
+    break;
+
+  case SYS_OPEN: //7
+    get_args(f->esp,(void **)&s_args,1);
+    if ((char *) s_args[0] == NULL) s_exit(ERROR);
+    check_buffer_ptr(s_args[0],1);
+    s_args[0] = (void *) user_to_kernel_ptr((const void *) s_args[0]);
+    fname = (char *)(s_args[0]);
+    f->eax = s_open(fname);
+    break;
+
+  case SYS_FILESIZE: //8
+    get_args(f->esp,(void **)&s_args,1);
+    int fid_fsize = (int) (s_args[0]);
+    f->eax = s_filesize(fid_fsize);
+    break;
+    
+  case SYS_READ: //9
+  case SYS_WRITE: //10
     get_args(f->esp,(void **)&s_args,3);
     int fd_rw = (int)(s_args[0]);
     unsigned int bufsize = (unsigned int)(s_args[2]);
@@ -150,7 +153,7 @@ syscall_handler (struct intr_frame *f ) // UNUSED)
       f->eax = s_read(fd_rw,buf,bufsize);      
     break;
     
-  case SYS_SEEK:
+  case SYS_SEEK://11
     get_args(f->esp,(void **)&s_args,2);
     int fd = (int)(s_args[0]);
     unsigned int position = (unsigned int)s_args[1];
@@ -158,7 +161,7 @@ syscall_handler (struct intr_frame *f ) // UNUSED)
     break;
       
 
-  case SYS_CLOSE:
+  case SYS_CLOSE://13
     get_args(f->esp,(void **)&s_args,1);
     int fid = (int)(s_args[0]);
     s_close(fid);
@@ -173,17 +176,25 @@ syscall_handler (struct intr_frame *f ) // UNUSED)
 /*
   Get n function args from stack pointer.
   Validate each pointer.
+
+  Modified to check each byte using check_p
+  Also checks ptrs against the current threads
+  page directory with check buffer pointer
   
 */
 void get_args(void *sp, void **args,int n) {
-  int i;
+  int i,j;
   int *p;
+  int *check_p;
 
+  //Account for initial 4 byte offset with n + 1
+  //Multiply by 4 to check int sized buffers
+  // checks for both invalid ptrs and if page exists in current pd
+  check_buffer_ptr(sp,(n+1)*4);
+  
   if (n <= 0) return;
   for (i = 0; i < n; i++) {
     p = (int *) sp + (i + 1); // forces pointer offsets to 4 bytes!
-    check_invalid_ptr_error((const void *) p); // check stack ptr
-    //check_invalid_ptr_error((const void *) *p); // check dereferenced stack ptr
     args[i] = (void *) *p;//(sp + (i+1) * wlen);
     //printf("Args %d: %x\n",i,*(int*)args[i]);
   }
@@ -246,7 +257,7 @@ synchronization to ensure this.
 tid_t
 s_exec(char *cmdline) {
   tid_t pid = process_execute(cmdline);
-  if (pid == TID_ERROR) return (ERROR);
+  if (pid == TID_ERROR) s_exit(ERROR);
   struct child_process* cp = get_child_process(pid);
   ASSERT(cp);
   return pid;

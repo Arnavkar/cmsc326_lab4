@@ -53,9 +53,9 @@ process_execute (const char *file_name)
 
   if (file == NULL) {
       free(file);
-      printf ("load: %s: open failed\n", file_name);
+      //printf ("load: %s: open failed\n", file_name);
       return TID_ERROR;
-    }
+  }
 
   if (lock_held_by_current_thread(&file_lock)) lock_release(&file_lock);
   file_close(file);
@@ -314,7 +314,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
 
   if (file == NULL) 
     {
-      printf ("load: %s: open failed\n", file_name);
+      //printf ("load: %s: open failed\n", file_name);
       goto done; 
     }
 
