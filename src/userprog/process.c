@@ -107,10 +107,12 @@ start_process (void *file_name_)
    been successfully called for the given TID, returns -1
    immediately, without waiting.
 
-   This function will be implemented in problem 2-2.  For now, it
-   does nothing. */
+   Wait implemented with Binary semaphore for each process
+ */
+
+//FIX - Wait simple,twice,multiple
 int
-process_wait (tid_t child_tid UNUSED) 
+process_wait (tid_t child_tid) 
 {
   struct child_process* cp = get_child_process(child_tid);
   if (!cp){
@@ -126,6 +128,8 @@ process_wait (tid_t child_tid UNUSED)
   
   int status = cp->status;
   remove_child_process(cp);
+  printf("Status was %d",status);
+
   return status;
 }
 
@@ -404,6 +408,8 @@ load (const char *file_name, void (**eip) (void), void **esp)
 
   //If successfull, deny write to the executable file and keep it open
   //Also, store a reference to the executable file to the current thread, and add to the file list of the current thread
+
+  //FIX - ROX CHECKS
   if (success){
     file_deny_write(file);
     t->exec_file = file;

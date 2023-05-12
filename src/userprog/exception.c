@@ -141,6 +141,8 @@ page_fault (struct intr_frame *f)
   intr_enable ();
 
   /*When a page fault is generated, it may be the case that check_invalid_ptr_error has not yet run, since no other syscall might have been made apart from the write to disk*/
+
+  /* FIX - Bad Jump/Write/Read */
   check_invalid_ptr_error (fault_addr);
   
   /* Count page faults. */

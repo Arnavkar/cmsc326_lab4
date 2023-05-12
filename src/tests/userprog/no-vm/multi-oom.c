@@ -120,6 +120,7 @@ main (int argc, char *argv[])
     }
 
   int howmany = is_at_root ? EXPECTED_REPETITIONS : 1;
+  msg("number of reps=%d",EXPECTED_REPETITIONS);
   int i, expected_depth = -1;
 
   for (i = 0; i < howmany; i++)
@@ -134,7 +135,8 @@ main (int argc, char *argv[])
           child_pid = spawn_child (n + 1, CRASH);
           if (child_pid != -1)
             {
-              if (wait (child_pid) != -1)
+	      int status = wait (child_pid);
+              if (status != -1)
                 fail ("crashed child should return -1.");
             }
           /* If spawning this child failed, so should
