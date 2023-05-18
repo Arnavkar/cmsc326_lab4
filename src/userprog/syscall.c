@@ -153,7 +153,7 @@ syscall_handler (struct intr_frame *f ) // UNUSED)
       f->eax = s_read(fd_rw,buf,bufsize);      
     break;
     
-  case SYS_SEEK://11 //FIX-ROX checks
+  case SYS_SEEK://11
     get_args(f->esp,(void **)&s_args,2);
     int fd = (int)(s_args[0]);
     unsigned int position = (unsigned int)s_args[1];
@@ -190,8 +190,6 @@ void get_args(void *sp, void **args,int n) {
   //Account for initial 4 byte offset with n + 1
   //Multiply by 4 to check int sized buffers
   // checks for both invalid ptrs and if page exists in current pd
-
-  //FIX EXEC-BOUND
   check_buffer_ptr(sp,(n+1)*4);
   
   if (n <= 0) return;
@@ -256,9 +254,9 @@ successfully loaded its executable. You must use appropriate
 synchronization to ensure this.
 
 */
-tid_t s_exec(char *cmdline) {
+tid_t
+s_exec(char *cmdline) {
   tid_t pid = process_execute(cmdline);
-  //FIX - EXEC-BOUND-3, call s_exit(ERROR) instead of return ERROR
   if (pid == TID_ERROR) s_exit(ERROR);
   struct child_process* cp = get_child_process(pid);
   ASSERT(cp);
@@ -272,13 +270,13 @@ tid_t s_exec(char *cmdline) {
    indicates success and nonzero values indicate errors.
 */
 void s_exit (int status) {
-  struct thread *cur = thread_current();
+  struct thread *curthread = thread_current();
 
-  if (thread_alive(cur->parent)){
-      cur->cp->status = status; // set up child status for later
+  if (thread_alive(curthread->parent)){
+      curthread->cp->status = status; // set up child status for later
   }
   
-  printf ("%s: exit(%d)\n",cur->name,status);
+  printf ("%s: exit(%d)\n",curthread->name,status);
   if (lock_held_by_current_thread(&file_lock)) lock_release(&file_lock);
   
   thread_exit();
